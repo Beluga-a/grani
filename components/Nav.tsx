@@ -8,7 +8,7 @@ const LINKS = [
   { href: "/", label: "Главная" },
   { href: "/quests", label: "Квесты" },
   { href: "/rules", label: "Правила" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/faq", label: "Часто задаваемые вопросы" },
   { href: "/feartest", label: "Тест на страх" },
   { href: "/certificates", label: "Сертификаты" },
 ];

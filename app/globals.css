@@ -552,7 +552,20 @@ a { color: inherit; text-decoration: none; }
 
 /* ─── RULES ─── */
 .rules-layout { display: grid; grid-template-columns: 240px 1fr; gap: 48px; }
-@media (max-width: 900px) { .rules-layout { grid-template-columns: 1fr; gap: 24px; } }
+@media (max-width: 900px) {
+  .rules-layout { grid-template-columns: 1fr; gap: 0; }
+  .rules-nav {
+    position: static !important;
+    flex-direction: row !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 0 !important;
+    margin-bottom: 32px;
+    background: var(--border) !important;
+  }
+  .rules-nav::-webkit-scrollbar { display: none; }
+  .rules-nav-item { white-space: nowrap; flex-shrink: 0; }
+}
 .rules-nav {
   position: sticky; top: 96px; align-self: start;
   display: flex; flex-direction: column; gap: 1px; background: var(--border);
