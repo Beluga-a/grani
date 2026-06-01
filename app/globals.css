@@ -291,7 +291,22 @@ a { color: inherit; text-decoration: none; }
 }
 .quests-grid.g2 { grid-template-columns: repeat(2, 1fr); }
 @media (max-width: 900px) {
-  .quests-grid, .quests-grid.g2 { grid-template-columns: 1fr; background: transparent; gap: 2px; }
+  .quests-grid, .quests-grid.g2 {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    background: transparent;
+    padding: 0 24px 16px;
+    margin: 0 -24px;
+    scrollbar-width: none;
+  }
+  .quests-grid::-webkit-scrollbar, .quests-grid.g2::-webkit-scrollbar { display: none; }
+  .quests-grid > *, .quests-grid.g2 > * {
+    flex: 0 0 82vw;
+    scroll-snap-align: start;
+  }
 }
 .qcard {
   background: var(--panel); display: flex; flex-direction: column;
@@ -402,7 +417,24 @@ a { color: inherit; text-decoration: none; }
 
 /* ─── REVIEWS ─── */
 .reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); }
-@media (max-width: 900px) { .reviews-grid { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .reviews-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 12px;
+    background: transparent;
+    padding: 0 24px 16px;
+    margin: 0 -24px;
+    scrollbar-width: none;
+  }
+  .reviews-grid::-webkit-scrollbar { display: none; }
+  .reviews-grid > * {
+    flex: 0 0 82vw;
+    scroll-snap-align: start;
+  }
+}
 .rcard {
   background: var(--panel); padding: 32px;
   display: flex; flex-direction: column; gap: 18px; transition: .3s;
