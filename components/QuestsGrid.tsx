@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Quest, QuestCategory } from "@/lib/types";
 import QuestCard from "./QuestCard";
 import QuestModal from "./QuestModal";
@@ -23,9 +23,19 @@ const CATS: { id: "all" | QuestCategory; label: string }[] = [
 export default function QuestsGrid({ quests, showFilters = false, limit }: Props) {
   const [selected, setSelected] = useState<Quest | null>(null);
   const [filter, setFilter] = useState<"all" | QuestCategory>("all");
+  const [current, setCurrent] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   let visible = filter === "all" ? quests : quests.filter((q) => q.cat === filter);
   if (limit) visible = visible.slice(0, limit);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    const card = el.firstElementChild as HTMLElement | null;
+    const cardW = card ? card.offsetWidth + 12 : el.clientWidth;
+    setCurrent(Math.round(el.scrollLeft / cardW));
+  };
 
   return (
     <>
@@ -43,9 +53,15 @@ export default function QuestsGrid({ quests, showFilters = false, limit }: Props
         </div>
       )}
 
-      <div className="quests-grid">
+      <div className="quests-grid" ref={scrollRef} onScroll={handleScroll}>
         {visible.map((q) => (
           <QuestCard key={q.id} quest={q} onClick={() => setSelected(q)} />
+        ))}
+      </div>
+
+      <div className="swipe-dots">
+        {visible.map((_, i) => (
+          <div key={i} className={`swipe-dot${i === current ? " active" : ""}`} />
         ))}
       </div>
 
