@@ -7,10 +7,32 @@ import Footer from "@/components/Footer";
 import LogoSymbol from "@/components/LogoSymbol";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
+const BASE = "https://grani-production.up.railway.app";
+
 export const metadata: Metadata = {
-  title: "ГРАНИ СТРАХА — Horror Quest World",
+  metadataBase: new URL(BASE),
+  title: {
+    default: "Грани Страха — Хоррор квесты в Чите",
+    template: "%s | Грани Страха — Квесты в Чите",
+  },
   description:
-    "Премиальные хоррор-квесты с живыми актёрами и кинематографическими декорациями. С 2017 года.",
+    "Хоррор квесты с живыми актёрами в Чите. Бункер 404, Тайна отеля, Проклятие монахини. Забронировать квест — звоните +7 (999) 000-00-00. Экстремальные квесты для взрослых.",
+  keywords: [
+    "квесты Чита", "хоррор квест Чита", "страшные квесты Чита",
+    "квест комната Чита", "квест с актёрами Чита", "Грани страха Чита",
+    "экстрим квест Чита", "квест для взрослых Чита", "забронировать квест Чита",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    url: BASE,
+    siteName: "Грани Страха",
+    title: "Грани Страха — Хоррор квесты в Чите",
+    description: "Хоррор квесты с живыми актёрами в Чите. Экстремальные впечатления с 2017 года.",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
+  },
+  alternates: { canonical: BASE },
+  robots: { index: true, follow: true },
 };
 
 export const viewport = {
