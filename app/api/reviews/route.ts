@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { readReviews, writeReviews } from "@/lib/reviews";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  const reviews = readReviews();
-  return NextResponse.json(reviews);
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) return NextResponse.json([], { status: 200 });
+  return NextResponse.json(data);
 }
 
 export async function POST(req: Request) {
@@ -27,28 +32,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Отзыв слишком короткий" }, { status: 400 });
   }
 
-  const reviews = readReviews();
+  const { data, error } = await supabase
+    .from("reviews")
+    .insert({
+      name: session.user.name ?? "Пользователь",
+      email: session.user.email ?? null,
+      avatar: session.user.image ?? null,
+      quest,
+      rating,
+      text: text.trim(),
+    })
+    .select()
+    .single();
 
-  const now = new Date();
-  const date = now.toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  const newReview = {
-    id: `user-${Date.now()}`,
-    name: session.user.name ?? "Пользователь",
-    email: session.user.email ?? null,
-    avatar: session.user.image ?? null,
-    quest,
-    rating,
-    text: text.trim(),
-    date,
-  };
-
-  reviews.unshift(newReview);
-  writeReviews(reviews);
-
-  return NextResponse.json(newReview, { status: 201 });
+  if (error) return NextResponse.json({ error: "Ошибка сохранения" }, { status: 500 });
+  return NextResponse.json(data, { status: 201 });
 }

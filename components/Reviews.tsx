@@ -2,7 +2,17 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
-import type { ReviewRecord } from "@/lib/reviews";
+interface ReviewRecord {
+  id: string;
+  name: string;
+  email: string | null;
+  avatar: string | null;
+  quest: string;
+  rating: number;
+  text: string;
+  created_at?: string;
+  date?: string;
+}
 
 const QUEST_NAMES = ["Бункер 404", "Тайна отеля", "Проклятие монахини"];
 
@@ -230,7 +240,7 @@ export default function Reviews() {
                   <Avatar review={r} />
                   <div style={{ flex: 1 }}>
                     <div className="rname">{r.name}</div>
-                    <div className="rdate">{r.date}</div>
+                    <div className="rdate">{r.date ?? (r.created_at ? new Date(r.created_at).toLocaleDateString("ru-RU") : "")}</div>
                   </div>
                   <div className="rstars">{"★".repeat(r.rating)}</div>
                 </div>
