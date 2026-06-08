@@ -33,6 +33,7 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: BASE },
   robots: { index: true, follow: true },
+  verification: { google: "7lzEyh3jf6U0eU0pnwxqT39jy4S-wgQ24qvDcNHae-M" },
 };
 
 export const viewport = {
