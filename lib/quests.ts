@@ -5,6 +5,9 @@ import {
   getQuests,
   updateQuestField,
   seedQuests,
+  insertQuest,
+  deleteQuest,
+  getMaxQuestId,
 } from "./db";
 import questsJson from "../data/quests.json";
 
@@ -25,4 +28,16 @@ export async function patchQuestField(
 ): Promise<Quest | null> {
   await ensureReady();
   return updateQuestField(id, field, value);
+}
+
+export async function addQuest(data: Omit<Quest, "id">): Promise<Quest> {
+  await initQuestsTable();
+  const maxId = await getMaxQuestId();
+  const quest = { ...data, id: maxId + 1 } as Quest;
+  return insertQuest(quest);
+}
+
+export async function removeQuest(id: number): Promise<boolean> {
+  await initQuestsTable();
+  return deleteQuest(id);
 }

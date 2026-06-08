@@ -70,4 +70,22 @@ export async function seedQuests(quests: Quest[]) {
   }
 }
 
+export async function getMaxQuestId(): Promise<number> {
+  const { rows } = await pool.query(`SELECT COALESCE(MAX(id), 0) as max_id FROM quests`);
+  return Number(rows[0].max_id);
+}
+
+export async function insertQuest(quest: Quest): Promise<Quest> {
+  const { rows } = await pool.query(
+    `INSERT INTO quests (id, data) VALUES ($1, $2) RETURNING data`,
+    [quest.id, JSON.stringify(quest)]
+  );
+  return rows[0].data as Quest;
+}
+
+export async function deleteQuest(id: number): Promise<boolean> {
+  const { rowCount } = await pool.query(`DELETE FROM quests WHERE id = $1`, [id]);
+  return (rowCount ?? 0) > 0;
+}
+
 export default pool;

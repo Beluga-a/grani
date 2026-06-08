@@ -4,17 +4,10 @@
 ═══════════════════════════════════════════════════════════
 
 Бот общается с сайтом через HTTP API:
-  GET   /api/quests         — получить все квесты
-  PATCH /api/quests         — обновить одно поле (с заголовком X-Admin-Secret)
-
-Установка (один раз):
-  1. Создай бота: напиши @BotFather в Telegram → /newbot →
-     придумай имя → получи TOKEN
-  2. Узнай свой Telegram ID: напиши @userinfobot → получишь число
-  3. Установи зависимости:
-       pip install python-telegram-bot==21.6 requests
-  4. Заполни настройки ниже (TOKEN, ADMIN_ID, SITE_URL, ADMIN_SECRET)
-  5. Запусти:  python admin_bot.py
+  GET    /api/quests  — получить все квесты
+  PATCH  /api/quests  — обновить одно поле
+  POST   /api/quests  — создать новый квест
+  DELETE /api/quests  — удалить квест
 
 Команды:
   /start  — открыть меню
@@ -29,7 +22,6 @@ from telegram.ext import (
 )
 
 # ═══════════════════════ НАСТРОЙКИ ═══════════════════════
-# Лучше задавать через переменные окружения или bot/.env
 ENV_PATH = os.path.join(os.path.dirname(__file__), ".env")
 if os.path.exists(ENV_PATH):
     with open(ENV_PATH, "r", encoding="utf-8") as f:
@@ -43,9 +35,9 @@ if os.path.exists(ENV_PATH):
             os.environ.setdefault(key, value)
 
 TOKEN         = os.getenv("BOT_TOKEN", "").strip()
-ADMIN_ID_RAW  = os.getenv("ADMIN_ID", "").strip()   # твой Telegram ID (только число)
-SITE_URL      = os.getenv("SITE_URL", "http://localhost:3000").strip()  # адрес сайта
-ADMIN_SECRET  = os.getenv("ADMIN_SECRET", "change-me-to-random-string").strip()  # должен совпадать с .env сайта
+ADMIN_ID_RAW  = os.getenv("ADMIN_ID", "").strip()
+SITE_URL      = os.getenv("SITE_URL", "http://localhost:3000").strip()
+ADMIN_SECRET  = os.getenv("ADMIN_SECRET", "change-me-to-random-string").strip()
 
 if not TOKEN:
     raise SystemExit("Не задан BOT_TOKEN. Укажи его в переменных окружения.")
@@ -80,6 +72,20 @@ FIELDS = {
     "tags":       {"label": "🏷 Особенности",      "type": "list", "hint": "Каждый пункт с новой строки"},
 }
 
+# Поля для мастера создания нового квеста (по порядку)
+NEW_QUEST_STEPS = [
+    ("name",      "📌 Введи название квеста:",             "text",   None),
+    ("icon",      "🔣 Введи иконку (один эмодзи):",        "text",   "Например: ☢ 🏨 ⛪ 🔮 💀 👁"),
+    ("desc",      "📝 Краткое описание (1-2 предложения):", "text",  "Показывается на карточке квеста"),
+    ("full",      "📖 Полное описание:",                   "text",   "Показывается на странице квеста"),
+    ("basePrice", "💰 Цена (в рублях):",                   "int",    "Например: 4500"),
+    ("players",   "👤 Количество игроков:",                "text",   "Например: 2–6"),
+    ("time",      "⏱ Длительность:",                       "text",   "Например: 60 мин"),
+    ("age",       "🔞 Возрастное ограничение:",            "text",   "Например: 16+"),
+    ("fear",      "😱 Уровень страха (1-5):",              "int",    None),
+    ("diff",      "🧠 Уровень сложности (1-5):",           "int",    None),
+]
+
 # ═══════════════════════ HTTP ══════════════════════════
 def api_get_quests():
     r = requests.get(f"{SITE_URL}/api/quests", timeout=10)
@@ -100,22 +106,33 @@ def api_update_field(quest_id: int, field: str, value):
     r.raise_for_status()
     return r.json()
 
+def api_create_quest(data: dict):
+    r = requests.post(
+        f"{SITE_URL}/api/quests",
+        json=data,
+        headers={"X-Admin-Secret": ADMIN_SECRET},
+        timeout=10,
+    )
+    r.raise_for_status()
+    return r.json()
+
+def api_delete_quest(quest_id: int):
+    r = requests.delete(
+        f"{SITE_URL}/api/quests",
+        json={"id": quest_id},
+        headers={"X-Admin-Secret": ADMIN_SECRET},
+        timeout=10,
+    )
+    r.raise_for_status()
+    return r.json()
+
 # ═══════════════════════ ПРОВЕРКА ДОСТУПА ═══════════════════════
 def is_admin(update: Update) -> bool:
     return update.effective_user.id == ADMIN_ID
 
-# ═══════════════════════ ХЕНДЛЕРЫ ═══════════════════════
+# ═══════════════════════ ГЛАВНОЕ МЕНЮ ═══════════════════════
 
-async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update):
-        await update.message.reply_text("⛔ Доступ запрещён.")
-        return
-    try:
-        quests = api_get_quests()
-    except Exception as e:
-        await update.message.reply_text(f"❌ Не могу связаться с сайтом ({SITE_URL}):\n{e}")
-        return
-
+def build_main_menu(quests):
     keyboard = [
         [InlineKeyboardButton(
             f"{q['icon']} {q['name']} — {q['basePrice']} ₽",
@@ -123,10 +140,24 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )]
         for q in quests
     ]
-    text = "🎭 *ГРАНИ СТРАХА — Админка*\n\nВыбери квест для редактирования:"
+    keyboard.append([InlineKeyboardButton("➕ Добавить квест", callback_data="new_quest")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
+        await update.message.reply_text("⛔ Доступ запрещён.")
+        return
+    context.user_data.clear()
+    try:
+        quests = api_get_quests()
+    except Exception as e:
+        await update.message.reply_text(f"❌ Не могу связаться с сайтом ({SITE_URL}):\n{e}")
+        return
+
     await update.message.reply_text(
-        text,
-        reply_markup=InlineKeyboardMarkup(keyboard),
+        "🎭 *ГРАНИ СТРАХА — Админка*\n\nВыбери квест для редактирования или создай новый:",
+        reply_markup=build_main_menu(quests),
         parse_mode="Markdown"
     )
 
@@ -157,12 +188,100 @@ async def show_quest_card(query, quest_id):
             row = []
     if row:
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton("◀️ К списку квестов", callback_data="back_to_list")])
+    keyboard.append([
+        InlineKeyboardButton("🗑 Удалить квест", callback_data=f"delete_quest:{quest_id}"),
+        InlineKeyboardButton("◀️ К списку", callback_data="back_to_list"),
+    ])
 
     await query.edit_message_text(
         text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown"
     )
 
+
+# ═══════════════════════ МАСТЕР СОЗДАНИЯ КВЕСТА ═══════════════════════
+
+async def start_new_quest(query, context):
+    context.user_data.clear()
+    context.user_data["new_quest"] = {"step": 0, "data": {}}
+    await ask_new_quest_step(query, context, edit=True)
+
+
+async def ask_new_quest_step(query_or_msg, context, edit=False):
+    state = context.user_data.get("new_quest", {})
+    step = state.get("step", 0)
+
+    if step >= len(NEW_QUEST_STEPS):
+        # Показываем категорию
+        keyboard = [
+            [InlineKeyboardButton("👹 Экстрим (extreme)", callback_data="nq_cat:extreme")],
+            [InlineKeyboardButton("🔍 Детектив (mystery)", callback_data="nq_cat:mystery")],
+            [InlineKeyboardButton("🏰 Классика (classic)", callback_data="nq_cat:classic")],
+            [InlineKeyboardButton("❌ Отмена", callback_data="back_to_list")],
+        ]
+        text = "📂 *Выбери категорию квеста:*"
+        if edit:
+            await query_or_msg.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        else:
+            await query_or_msg.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        return
+
+    field, prompt, ftype, hint = NEW_QUEST_STEPS[step]
+    total = len(NEW_QUEST_STEPS) + 1  # +1 для категории
+    text = f"*Новый квест — шаг {step+1}/{total}*\n\n{prompt}"
+    if hint:
+        text += f"\n\n💡 _{hint}_"
+    text += "\n\n_/cancel — отменить создание_"
+
+    keyboard = [[InlineKeyboardButton("❌ Отмена", callback_data="back_to_list")]]
+    if edit:
+        await query_or_msg.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    else:
+        await query_or_msg.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
+
+async def finish_new_quest(query, context, cat: str):
+    state = context.user_data.get("new_quest", {})
+    data = state.get("data", {})
+    data["cat"] = cat
+
+    # Дефолтные значения
+    quest_data = {
+        "fear": 3,
+        "diff": 3,
+        "players": "2–6",
+        "time": "60 мин",
+        "age": "12+",
+        "rating": "5.0",
+        "reviews": 0,
+        "badge": "НОВИНКА",
+        "baseUpTo": 4,
+        "extraPrice": 500,
+        "schedule": "Ежедневно 10:00–23:00",
+        "tags": [],
+        "atmosphere": [],
+        "included": ["Инструктаж", "Реквизит", "Актёры", "Фото после квеста"],
+        **data,
+    }
+
+    try:
+        result = api_create_quest(quest_data)
+        q = result.get("quest", {})
+        text = (
+            f"✅ *Квест создан!*\n\n"
+            f"*{q.get('icon','?')} {q.get('name','?')}*\n"
+            f"ID: {q.get('id','?')} · Цена: {q.get('basePrice','?')} ₽\n\n"
+            f"Квест уже появился на сайте. Можешь отредактировать его нажав на него в списке."
+        )
+    except Exception as e:
+        text = f"❌ Ошибка при создании квеста:\n{e}"
+
+    context.user_data.clear()
+    quests = api_get_quests()
+    keyboard = [[InlineKeyboardButton("📋 К списку квестов", callback_data="back_to_list")]]
+    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
+
+# ═══════════════════════ ХЕНДЛЕР КНОПОК ═══════════════════════
 
 async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -173,29 +292,27 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     data = query.data
 
+    # — Назад к списку —
     if data == "back_to_list":
+        context.user_data.clear()
         try:
             quests = api_get_quests()
         except Exception as e:
             await query.edit_message_text(f"❌ Ошибка связи: {e}")
             return
-        keyboard = [
-            [InlineKeyboardButton(
-                f"{q['icon']} {q['name']} — {q['basePrice']} ₽",
-                callback_data=f"quest:{q['id']}"
-            )] for q in quests
-        ]
         await query.edit_message_text(
             "🎭 *ГРАНИ СТРАХА — Админка*\n\nВыбери квест:",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            reply_markup=build_main_menu(quests),
             parse_mode="Markdown"
         )
         return
 
+    # — Открыть квест —
     if data.startswith("quest:"):
         await show_quest_card(query, int(data.split(":")[1]))
         return
 
+    # — Редактировать поле —
     if data.startswith("edit:"):
         _, quest_id, field = data.split(":")
         quest_id = int(quest_id)
@@ -203,7 +320,7 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         q = api_get_quest(quest_id)
         context.user_data["editing"] = {"quest_id": quest_id, "field": field}
 
-        current = q[field]
+        current = q.get(field, "")
         current_str = "\n".join(current) if isinstance(current, list) else str(current)
 
         msg = f"✏️ *Редактирование:* {info['label']}\n"
@@ -221,6 +338,7 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text(msg, parse_mode="Markdown")
         return
 
+    # — Сохранить выбор (choice) —
     if data.startswith("set_choice:"):
         _, quest_id, field, value = data.split(":", 3)
         quest_id = int(quest_id)
@@ -233,11 +351,88 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_quest_card(query, quest_id)
         return
 
+    # — Удалить квест (запрос подтверждения) —
+    if data.startswith("delete_quest:"):
+        quest_id = int(data.split(":")[1])
+        q = api_get_quest(quest_id)
+        name = q["name"] if q else f"#{quest_id}"
+        keyboard = [
+            [InlineKeyboardButton("✅ Да, удалить", callback_data=f"confirm_delete:{quest_id}")],
+            [InlineKeyboardButton("❌ Отмена", callback_data=f"quest:{quest_id}")],
+        ]
+        await query.edit_message_text(
+            f"⚠️ *Удалить квест «{name}»?*\n\nЭто действие необратимо. Квест будет удалён из базы данных.",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+        return
+
+    # — Подтверждение удаления —
+    if data.startswith("confirm_delete:"):
+        quest_id = int(data.split(":")[1])
+        try:
+            api_delete_quest(quest_id)
+            text = "✅ Квест удалён."
+        except Exception as e:
+            text = f"❌ Ошибка при удалении:\n{e}"
+        quests = api_get_quests()
+        await query.edit_message_text(
+            text + "\n\nВыбери квест:",
+            reply_markup=build_main_menu(quests),
+            parse_mode="Markdown"
+        )
+        return
+
+    # — Начать создание нового квеста —
+    if data == "new_quest":
+        await start_new_quest(query, context)
+        return
+
+    # — Выбор категории при создании —
+    if data.startswith("nq_cat:"):
+        cat = data.split(":")[1]
+        await finish_new_quest(query, context, cat)
+        return
+
+
+# ═══════════════════════ ХЕНДЛЕР ТЕКСТА ═══════════════════════
 
 async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update):
         return
 
+    raw = update.message.text.strip()
+
+    # Режим создания нового квеста
+    if "new_quest" in context.user_data:
+        state = context.user_data["new_quest"]
+        step = state["step"]
+
+        if step >= len(NEW_QUEST_STEPS):
+            # Ждём выбор категории кнопкой
+            await update.message.reply_text("Выбери категорию кнопкой выше.")
+            return
+
+        field, _, ftype, _ = NEW_QUEST_STEPS[step]
+
+        try:
+            if ftype == "int":
+                value = int(raw.replace(" ", "").replace(",", ""))
+                if field in ("fear", "diff") and not (1 <= value <= 5):
+                    raise ValueError("Введи число от 1 до 5")
+            else:
+                value = raw
+        except ValueError as e:
+            await update.message.reply_text(f"❌ {e}\nПопробуй ещё раз:")
+            return
+
+        state["data"][field] = value
+        state["step"] += 1
+
+        await ask_new_quest_step(update.message, context, edit=False)
+        return
+
+    # Режим редактирования существующего квеста
     editing = context.user_data.get("editing")
     if not editing:
         await update.message.reply_text("Не понимаю. Нажми /start")
@@ -246,7 +441,6 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     quest_id = editing["quest_id"]
     field = editing["field"]
     info = FIELDS[field]
-    raw = update.message.text.strip()
 
     try:
         if info["type"] == "int":
@@ -281,16 +475,11 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.user_data.pop("editing", None):
-        await update.message.reply_text("❌ Отменено. /start чтоб начать заново.")
-    else:
-        await update.message.reply_text("Нечего отменять. /start")
+    context.user_data.clear()
+    await update.message.reply_text("❌ Отменено. /start чтоб начать заново.")
 
 
 def main():
-    if TOKEN.startswith("ВСТАВЬ"):
-        print("ERROR: Заполни TOKEN, ADMIN_ID, SITE_URL и ADMIN_SECRET в начале admin_bot.py")
-        return
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("quests", cmd_start))
