@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import type { ReviewRecord } from "@/lib/reviews";
 
 const QUEST_NAMES = ["Бункер 404", "Тайна отеля", "Проклятие монахини"];
@@ -127,48 +127,16 @@ export default function Reviews() {
         </h2>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {session ? (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  fontSize: 13,
-                  color: "var(--text)",
-                }}
-              >
-                {session.user?.image && (
-                  <img
-                    src={session.user.image}
-                    alt=""
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                    }}
-                  />
-                )}
-                <span>{session.user?.name}</span>
-              </div>
-              <button
-                className="btn-outline"
-                style={{ fontSize: 12, padding: "6px 14px" }}
-                onClick={() => signOut()}
-              >
-                Выйти
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setShowForm(!showForm);
-                  setSuccess(false);
-                  setError("");
-                }}
-              >
-                {showForm ? "Отмена" : "Оставить отзыв"}
-              </button>
-            </>
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setShowForm(!showForm);
+                setSuccess(false);
+                setError("");
+              }}
+            >
+              {showForm ? "Отмена" : "Оставить отзыв"}
+            </button>
           ) : (
             <button
               className="btn btn-primary"

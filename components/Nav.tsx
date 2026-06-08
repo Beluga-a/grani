@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const LINKS = [
   { href: "/", label: "Главная" },
@@ -17,6 +18,7 @@ export default function Nav() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -56,6 +58,15 @@ export default function Nav() {
 
       <div className="nav-right">
         <span className="nav-phone">+7 (999) 000-00-00</span>
+        {session ? (
+          <div className="nav-user">
+            {session.user?.image && (
+              <img src={session.user.image} alt="" className="nav-user-avatar" />
+            )}
+            <span className="nav-user-name">{session.user?.name}</span>
+            <button className="nav-user-out" onClick={() => signOut()}>Выйти</button>
+          </div>
+        ) : null}
         <button
           className={`burger ${open ? "open" : ""}`}
           onClick={() => setOpen((v) => !v)}
