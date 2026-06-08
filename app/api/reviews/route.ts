@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import pool, { initDb } from "@/lib/db";
+import pool, { initReviewsTable } from "@/lib/db";
 
 export async function GET() {
   try {
-    await initDb();
+    await initReviewsTable();
     const { rows } = await pool.query(
       "SELECT * FROM reviews ORDER BY created_at DESC"
     );
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    await initDb();
+    await initReviewsTable();
     const { rows } = await pool.query(
       `INSERT INTO reviews (name, email, avatar, quest, rating, text)
        VALUES ($1, $2, $3, $4, $5, $6)
