@@ -3,6 +3,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import LogoSymbol from "@/components/LogoSymbol";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
 export const metadata: Metadata = {
   title: "ГРАНИ СТРАХА — Horror Quest World",
@@ -30,10 +31,12 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <LogoSymbol />
-        <Nav />
-        {children}
-        <Footer />
+        <SessionProviderWrapper>
+          <LogoSymbol />
+          <Nav />
+          {children}
+          <Footer />
+        </SessionProviderWrapper>
       </body>
     </html>
   );
