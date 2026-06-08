@@ -50,10 +50,16 @@ export default function QuestModal({ quest, onClose }: Props) {
 
         {/* HERO */}
         <div className="modal-hero">
-          <div className="modal-hero-bg" />
-          <svg className="modal-hero-icon" viewBox="0 0 587 494" aria-hidden="true">
-            <use href="#logoMark" />
-          </svg>
+          {quest.photo ? (
+            <img src={quest.photo} alt={quest.name} className="modal-hero-photo" />
+          ) : (
+            <>
+              <div className="modal-hero-bg" />
+              <svg className="modal-hero-icon" viewBox="0 0 587 494" aria-hidden="true">
+                <use href="#logoMark" />
+              </svg>
+            </>
+          )}
           <div className="modal-hero-overlay" />
           <div className="modal-hero-content">
             <div className="modal-cat-badge">

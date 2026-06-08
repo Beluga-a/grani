@@ -10,8 +10,12 @@ export default function QuestCard({ quest, onClick }: Props) {
   return (
     <button className="qcard" onClick={onClick} type="button">
       <div className="qcard-img">
+        {quest.photo ? (
+          <img src={quest.photo} alt={quest.name} className="qcard-photo" />
+        ) : (
+          <div className="qcard-img-inner">{quest.icon}</div>
+        )}
         <div className="qcard-cat-badge">{categoryLabel(quest.cat)}</div>
-        <div className="qcard-img-inner">{quest.icon}</div>
       </div>
       <div className="qcard-body">
         <div className="qcard-top">

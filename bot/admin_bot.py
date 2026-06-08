@@ -74,6 +74,7 @@ FIELDS = {
     "cat":        {"label": "📂 Категория",        "type": "choice", "choices": ["extreme", "mystery", "classic"]},
     "icon":       {"label": "🔣 Символ",           "type": "text", "hint": "Один символ, напр.: ☩ ✦ ⚛"},
     "schedule":   {"label": "📅 Расписание",       "type": "text"},
+    "photo":      {"label": "📸 Фото (URL)",       "type": "text", "hint": "Прямая ссылка на фото, напр.: https://i.imgur.com/abc.jpg"},
     "atmosphere": {"label": "🌫 Атмосфера",        "type": "list", "hint": "Каждый пункт с новой строки"},
     "included":   {"label": "✅ Что входит",       "type": "list", "hint": "Каждый пункт с новой строки"},
     "tags":       {"label": "🏷 Особенности",      "type": "list", "hint": "Каждый пункт с новой строки"},

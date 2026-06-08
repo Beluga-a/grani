@@ -16,6 +16,7 @@ export interface Quest {
   extraPrice: number;
   cat: QuestCategory;
   icon: string;
+  photo?: string;
   desc: string;
   full: string;
   tags: string[];

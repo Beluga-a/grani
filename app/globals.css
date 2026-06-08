@@ -337,6 +337,11 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--serif); font-style: italic; font-size: 42px;
   color: rgba(255, 255, 255, .12);
 }
+.qcard-photo {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; transition: transform .5s ease, filter .35s;
+}
+.qcard:hover .qcard-photo { transform: scale(1.06); filter: brightness(.7); }
 .qcard-body {
   padding: 28px; flex: 1;
   display: flex; flex-direction: column;
@@ -739,6 +744,10 @@ a { color: inherit; text-decoration: none; }
   opacity: .18; z-index: 1; filter: saturate(.6);
 }
 @media (max-width: 700px) { .modal-hero-icon { width: 180px; height: 180px; right: -30px; } }
+.modal-hero-photo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; z-index: 0;
+}
 .modal-hero-overlay {
   position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(180deg, rgba(8, 8, 8, .2) 0%, rgba(8, 8, 8, .45) 50%, rgba(20, 20, 20, .95) 100%);
