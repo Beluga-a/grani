@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import pool, { initDb } from "@/lib/db";
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from("reviews")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) return NextResponse.json([], { status: 200 });
-  return NextResponse.json(data);
+  try {
+    await initDb();
+    const { rows } = await pool.query(
+      "SELECT * FROM reviews ORDER BY created_at DESC"
+    );
+    return NextResponse.json(rows);
+  } catch {
+    return NextResponse.json([], { status: 200 });
+  }
 }
 
 export async function POST(req: Request) {
@@ -32,19 +34,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Отзыв слишком короткий" }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("reviews")
-    .insert({
-      name: session.user.name ?? "Пользователь",
-      email: session.user.email ?? null,
-      avatar: session.user.image ?? null,
-      quest,
-      rating,
-      text: text.trim(),
-    })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: "Ошибка сохранения" }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  try {
+    await initDb();
+    const { rows } = await pool.query(
+      `INSERT INTO reviews (name, email, avatar, quest, rating, text)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        session.user.name ?? "Пользователь",
+        session.user.email ?? null,
+        session.user.image ?? null,
+        quest,
+        rating,
+        text.trim(),
+      ]
+    );
+    return NextResponse.json(rows[0], { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Ошибка сохранения" }, { status: 500 });
+  }
 }
