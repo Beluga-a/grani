@@ -55,14 +55,18 @@ export async function updateQuestField(
 }
 
 export async function seedQuests(quests: Quest[]) {
-  const { rows } = await pool.query("SELECT COUNT(*) FROM quests");
-  if (parseInt(rows[0].count) === 0) {
-    for (const q of quests) {
-      await pool.query("INSERT INTO quests (id, data) VALUES ($1, $2)", [
-        q.id,
-        JSON.stringify(q),
-      ]);
-    }
+  for (const q of quests) {
+    // Вставляем только если квест ещё не существует
+    await pool.query(
+      `INSERT INTO quests (id, data) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
+      [q.id, JSON.stringify(q)]
+    );
+    // Исправляем сломанные иконки (суррогатные символы)
+    await pool.query(
+      `UPDATE quests SET data = jsonb_set(data, '{icon}', $2::jsonb)
+       WHERE id = $1 AND data->>'icon' != $3`,
+      [q.id, JSON.stringify(q.icon), q.icon]
+    );
   }
 }
 
