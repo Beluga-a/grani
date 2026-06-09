@@ -138,6 +138,8 @@ export default function QuestModal({ quest, onClose }: Props) {
             <div className="modal-section">
               <h3>Особенности</h3>
               <div className="modal-tags">
+                <span className="modal-tag">😱 Страх: {quest.fear}/5 — {FEAR_LABELS[quest.fear]}</span>
+                <span className="modal-tag">🔞 Возраст: {quest.age}</span>
                 {quest.tags.map((t, i) => (
                   <span key={i} className="modal-tag">{t}</span>
                 ))}
@@ -152,9 +154,6 @@ export default function QuestModal({ quest, onClose }: Props) {
               <div className="aside-rating">
                 <span className="aside-rating-num">{quest.rating}</span>
                 <span className="aside-rating-max">/ 5</span>
-              </div>
-              <div className="aside-rating-sub">
-                <strong>{quest.reviews}</strong> отзывов от игроков
               </div>
             </div>
 
@@ -172,17 +171,16 @@ export default function QuestModal({ quest, onClose }: Props) {
             </div>
 
             <div className="aside-block">
-              <div className="aside-block-label">Расписание</div>
-              <div className="aside-schedule">{quest.schedule}</div>
+              <div className="aside-block-label">Режим работы</div>
+              <div className="aside-schedule">Круглосуточно</div>
             </div>
 
             <div className="aside-block">
               <div className="aside-block-label">Контакты</div>
               <div className="aside-schedule">
-                📍 ул. Страха, 13<br />
-                📞 +7 (999) 000-00-00<br />
-                ✉ info@granistraha.ru<br />
-                🕐 Пн–Вс 10:00–23:00
+                📍 Чита, ул. Селенгинская 16 корп. 5<br />
+                📞 +7 (914) 516-31-88<br />
+                ✉ info@granistraha.ru
               </div>
             </div>
           </aside>
@@ -206,7 +204,7 @@ export default function QuestModal({ quest, onClose }: Props) {
             >
               Написать
             </a>
-            <a className="btn btn-primary" href="tel:+79990000000">
+            <a className="btn btn-primary" href="tel:+79145163188">
               Позвонить
             </a>
           </div>

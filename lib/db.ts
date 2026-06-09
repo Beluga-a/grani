@@ -70,6 +70,16 @@ export async function seedQuests(quests: Quest[]) {
   }
 }
 
+export async function getReviewsCount(): Promise<number> {
+  try {
+    await initReviewsTable();
+    const { rows } = await pool.query("SELECT COUNT(*) as count FROM reviews");
+    return Number(rows[0].count);
+  } catch {
+    return 0;
+  }
+}
+
 export async function getMaxQuestId(): Promise<number> {
   const { rows } = await pool.query(`SELECT COALESCE(MAX(id), 0) as max_id FROM quests`);
   return Number(rows[0].max_id);

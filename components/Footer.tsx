@@ -48,10 +48,10 @@ export default async function Footer() {
         <div>
           <div className="footer-head">Контакты</div>
           <ul className="footer-links">
-            <li><a>📍 ул. Страха, 13</a></li>
-            <li><a href="tel:+79990000000">📞 +7 (999) 000-00-00</a></li>
+            <li><a>📍 Чита, ул. Селенгинская 16 корп. 5</a></li>
+            <li><a href="tel:+79145163188">📞 +7 (914) 516-31-88</a></li>
             <li><a href="mailto:info@granistraha.ru">✉ info@granistraha.ru</a></li>
-            <li><a>🕐 Пн–Вс 10:00–23:00</a></li>
+            <li><a>🕐 Режим работы: круглосуточно</a></li>
           </ul>
         </div>
       </div>
