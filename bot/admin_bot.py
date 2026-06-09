@@ -641,6 +641,57 @@ async def upload_photo_to_telegraph(file_bytes: bytes) -> str:
     raise Exception("Все сервисы недоступны. Попробуй ещё раз.")
 
 
+async def upload_file(file_bytes: bytes, filename: str, mime: str) -> str:
+    """Загружает файл на catbox.moe и возвращает URL."""
+    # Попытка 1: catbox.moe
+    try:
+        r = requests.post(
+            "https://catbox.moe/user/api.php",
+            data={"reqtype": "fileupload"},
+            files={"fileToUpload": (filename, file_bytes, mime)},
+            timeout=60,
+        )
+        url = r.text.strip()
+        if url.startswith("https://"):
+            return url
+    except Exception:
+        pass
+
+    # Попытка 2: telegra.ph (только для фото)
+    if mime.startswith("image/"):
+        try:
+            r = requests.post(
+                "https://telegra.ph/upload",
+                files={"upload": (filename, file_bytes, mime)},
+                timeout=30,
+            )
+            result = r.json()
+            if isinstance(result, list) and result and "src" in result[0]:
+                return "https://telegra.ph" + result[0]["src"]
+        except Exception:
+            pass
+
+    # Попытка 3: 0x0.st
+    try:
+        r = requests.post(
+            "https://0x0.st",
+            files={"file": (filename, file_bytes, mime)},
+            timeout=60,
+        )
+        url = r.text.strip()
+        if url.startswith("http"):
+            return url
+    except Exception:
+        pass
+
+    raise Exception("Все сервисы недоступны. Попробуй ещё раз или пришли ссылку.")
+
+
+# Оставляем для обратной совместимости
+async def upload_photo_to_telegraph(file_bytes: bytes) -> str:
+    return await upload_file(file_bytes, "photo.jpg", "image/jpeg")
+
+
 async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка входящего фото — только если редактируем поле photo."""
     if not is_admin(update):
@@ -658,12 +709,11 @@ async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = await update.message.reply_text("⏳ Загружаю фото...")
 
     try:
-        # Берём самое большое качество
         photo = update.message.photo[-1]
         tg_file = await photo.get_file()
         file_bytes = await tg_file.download_as_bytearray()
 
-        photo_url = await upload_photo_to_telegraph(bytes(file_bytes))
+        photo_url = await upload_file(bytes(file_bytes), "photo.jpg", "image/jpeg")
         api_update_field(quest_id, "photo", photo_url)
 
         context.user_data.pop("editing", None)
@@ -680,6 +730,51 @@ async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await msg.edit_text(f"❌ Ошибка загрузки фото:\n{e}")
 
 
+async def on_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка входящего видео — только если редактируем поле video."""
+    if not is_admin(update):
+        return
+
+    editing = context.user_data.get("editing")
+    if not editing or editing.get("field") != "video":
+        await update.message.reply_text(
+            "🎥 Видео получено, но сейчас не выбрано поле для видео.\n"
+            "Открой квест → нажми 🎥 Видео (URL) → и затем пришли видео."
+        )
+        return
+
+    quest_id = editing["quest_id"]
+    msg = await update.message.reply_text("⏳ Загружаю видео, подожди...")
+
+    try:
+        video = update.message.video or update.message.document
+        if not video:
+            await msg.edit_text("❌ Не удалось получить видеофайл.")
+            return
+
+        tg_file = await video.get_file()
+        file_bytes = await tg_file.download_as_bytearray()
+
+        fname = getattr(video, "file_name", None) or "video.mp4"
+        mime = getattr(video, "mime_type", None) or "video/mp4"
+
+        video_url = await upload_file(bytes(file_bytes), fname, mime)
+        api_update_field(quest_id, "video", video_url)
+
+        context.user_data.pop("editing", None)
+        keyboard = [[
+            InlineKeyboardButton("◀️ К квесту", callback_data=f"quest:{quest_id}"),
+            InlineKeyboardButton("📋 К списку", callback_data="back_to_list"),
+        ]]
+        await msg.edit_text(
+            f"✅ *Видео загружено и сохранено!*\n\n[Ссылка на видео]({video_url})",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        await msg.edit_text(f"❌ Ошибка загрузки видео:\n{e}")
+
+
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
@@ -687,6 +782,7 @@ def main():
     app.add_handler(CommandHandler("cancel", cmd_cancel))
     app.add_handler(CallbackQueryHandler(on_button))
     app.add_handler(MessageHandler(filters.PHOTO, on_photo))
+    app.add_handler(MessageHandler(filters.VIDEO | filters.Document.VIDEO, on_video))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     print("Бот ГРАНИ СТРАХА запущен.")
     print(f"   Сайт: {SITE_URL}")
