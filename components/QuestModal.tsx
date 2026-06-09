@@ -85,7 +85,7 @@ export default function QuestModal({ quest, onClose }: Props) {
           <div className="modal-meta-item">
             <div className="modal-meta-label">Цена</div>
             <div className="modal-meta-val">
-              {quest.basePrice.toLocaleString("ru-RU")}
+              <em style={{ fontSize: "0.7em", opacity: 0.7 }}>от </em>{quest.basePrice.toLocaleString("ru-RU")}
               <em> ₽</em>
             </div>
           </div>
