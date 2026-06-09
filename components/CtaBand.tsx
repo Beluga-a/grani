@@ -17,8 +17,8 @@ export default function CtaBand({ title, sub, buttons }: Props) {
             <Link className="btn btn-primary" href="/quests">
               Смотреть квесты
             </Link>
-            <a className="btn btn-outline" href="tel:+79990000000">
-              +7 (999) 000-00-00
+            <a className="btn btn-outline" href="tel:+79145163188">
+              +7 (914) 516-31-88
             </a>
           </>
         )}

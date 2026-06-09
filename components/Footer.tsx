@@ -18,7 +18,7 @@ export default async function Footer() {
           </div>
           <p className="footer-desc">
             Экстремальные хоррор-квесты с 2017 года. Живые актёры, профессиональные
-            декорации, незабываемые впечатления. 18+.
+            декорации, незабываемые впечатления.
           </p>
         </div>
 
@@ -48,9 +48,8 @@ export default async function Footer() {
         <div>
           <div className="footer-head">Контакты</div>
           <ul className="footer-links">
-            <li><a>📍 Чита, ул. Селенгинская 16 корп. 5</a></li>
+            <li><a>📍 Ул. Недорезова 7В (цокольный этаж)</a></li>
             <li><a href="tel:+79145163188">📞 +7 (914) 516-31-88</a></li>
-            <li><a href="mailto:info@granistraha.ru">✉ info@granistraha.ru</a></li>
             <li><a>🕐 Режим работы: круглосуточно</a></li>
           </ul>
         </div>

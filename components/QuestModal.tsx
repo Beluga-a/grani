@@ -178,9 +178,8 @@ export default function QuestModal({ quest, onClose }: Props) {
             <div className="aside-block">
               <div className="aside-block-label">Контакты</div>
               <div className="aside-schedule">
-                📍 Чита, ул. Селенгинская 16 корп. 5<br />
-                📞 +7 (914) 516-31-88<br />
-                ✉ info@granistraha.ru
+                📍 Ул. Недорезова 7В (цокольный этаж)<br />
+                📞 +7 (914) 516-31-88
               </div>
             </div>
           </aside>
