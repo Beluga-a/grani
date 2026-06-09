@@ -63,7 +63,7 @@ export default function QuestModal({ quest, onClose }: Props) {
           <div className="modal-hero-overlay" />
           <div className="modal-hero-content">
             <div className="modal-cat-badge">
-              {categoryLabel(quest.cat)} · {quest.badge}
+              {quest.badge}
             </div>
             <h2 className="modal-title">{quest.name}</h2>
             <div className="modal-brand">
