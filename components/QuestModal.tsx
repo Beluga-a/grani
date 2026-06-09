@@ -4,6 +4,24 @@ import { useEffect } from "react";
 import type { Quest } from "@/lib/types";
 import { categoryLabel } from "@/lib/format";
 
+/** Конвертирует любую ссылку на видео в embed URL */
+function getEmbedUrl(url: string): string {
+  // YouTube: watch?v=ID или youtu.be/ID
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
+
+  // VK: vk.com/video-XXXXX_XXXXX
+  const vkMatch = url.match(/vk\.com\/video(-?\d+_\d+)/);
+  if (vkMatch) return `https://vk.com/video_ext.php?oid=${vkMatch[1].split("_")[0]}&id=${vkMatch[1].split("_")[1]}&hd=2`;
+
+  // Прямая ссылка на mp4/webm — возвращаем как есть (используем <video>)
+  return url;
+}
+
+function isDirectVideo(url: string): boolean {
+  return /\.(mp4|webm|ogg)(\?|$)/i.test(url);
+}
+
 interface Props {
   quest: Quest | null;
   onClose: () => void;
@@ -116,6 +134,24 @@ export default function QuestModal({ quest, onClose }: Props) {
                 <p>{quest.full}</p>
               </div>
             </div>
+
+            {quest.video && (
+              <div className="modal-section">
+                <h3>Видео</h3>
+                <div className="modal-video">
+                  {isDirectVideo(quest.video) ? (
+                    <video controls className="modal-video-el" src={quest.video} />
+                  ) : (
+                    <iframe
+                      className="modal-video-el"
+                      src={getEmbedUrl(quest.video)}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="modal-section">
               <h3>Атмосфера</h3>

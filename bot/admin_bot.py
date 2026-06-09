@@ -67,6 +67,7 @@ FIELDS = {
     "icon":       {"label": "🔣 Символ",           "type": "text", "hint": "Один символ, напр.: ☩ ✦ ⚛"},
     "schedule":   {"label": "📅 Расписание",       "type": "text"},
     "photo":      {"label": "📸 Фото (URL)",       "type": "text", "hint": "Прямая ссылка на фото, напр.: https://i.imgur.com/abc.jpg"},
+    "video":      {"label": "🎥 Видео (URL)",      "type": "text", "hint": "YouTube, VK или прямая ссылка на mp4. Напр.: https://youtube.com/watch?v=XXX"},
     "atmosphere": {"label": "🌫 Атмосфера",        "type": "list", "hint": "Каждый пункт с новой строки"},
     "included":   {"label": "✅ Что входит",       "type": "list", "hint": "Каждый пункт с новой строки"},
     "tags":       {"label": "🏷 Особенности",      "type": "list", "hint": "Каждый пункт с новой строки"},

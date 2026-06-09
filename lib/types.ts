@@ -17,6 +17,7 @@ export interface Quest {
   cat: QuestCategory;
   icon: string;
   photo?: string;
+  video?: string;
   desc: string;
   full: string;
   tags: string[];
