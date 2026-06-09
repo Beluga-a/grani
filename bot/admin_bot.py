@@ -599,16 +599,45 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ═══════════════════════ ЗАГРУЗКА ФОТО ═══════════════════════
 
 async def upload_photo_to_telegraph(file_bytes: bytes) -> str:
-    """Загружает фото на telegra.ph и возвращает URL."""
+    """Загружает фото — пробует catbox.moe, затем telegra.ph."""
+    # Попытка 1: catbox.moe
+    try:
+        r = requests.post(
+            "https://catbox.moe/user/api.php",
+            data={"reqtype": "fileupload"},
+            files={"fileToUpload": ("photo.jpg", file_bytes, "image/jpeg")},
+            timeout=30,
+        )
+        url = r.text.strip()
+        if url.startswith("https://"):
+            return url
+    except Exception:
+        pass
+
+    # Попытка 2: telegra.ph
+    try:
+        r = requests.post(
+            "https://telegra.ph/upload",
+            files={"upload": ("photo.jpg", file_bytes, "image/jpeg")},
+            timeout=30,
+        )
+        result = r.json()
+        if isinstance(result, list) and result and "src" in result[0]:
+            return "https://telegra.ph" + result[0]["src"]
+    except Exception:
+        pass
+
+    # Попытка 3: 0x0.st
     r = requests.post(
-        "https://telegra.ph/upload",
+        "https://0x0.st",
         files={"file": ("photo.jpg", file_bytes, "image/jpeg")},
         timeout=30,
     )
-    result = r.json()
-    if isinstance(result, list) and result and "src" in result[0]:
-        return "https://telegra.ph" + result[0]["src"]
-    raise Exception(f"Ошибка загрузки: {result}")
+    url = r.text.strip()
+    if url.startswith("https://") or url.startswith("http://"):
+        return url
+
+    raise Exception("Все сервисы недоступны. Попробуй ещё раз.")
 
 
 async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
