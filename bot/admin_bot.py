@@ -126,6 +126,21 @@ def api_delete_quest(quest_id: int):
     r.raise_for_status()
     return r.json()
 
+def api_get_reviews():
+    r = requests.get(f"{SITE_URL}/api/reviews", timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def api_delete_review(review_id: str):
+    r = requests.delete(
+        f"{SITE_URL}/api/reviews",
+        json={"id": review_id},
+        headers={"X-Admin-Secret": ADMIN_SECRET},
+        timeout=10,
+    )
+    r.raise_for_status()
+    return r.json()
+
 # ═══════════════════════ ПРОВЕРКА ДОСТУПА ═══════════════════════
 def is_admin(update: Update) -> bool:
     return update.effective_user.id == ADMIN_ID
@@ -140,7 +155,10 @@ def build_main_menu(quests):
         )]
         for q in quests
     ]
-    keyboard.append([InlineKeyboardButton("➕ Добавить квест", callback_data="new_quest")])
+    keyboard.append([
+        InlineKeyboardButton("➕ Добавить квест", callback_data="new_quest"),
+        InlineKeyboardButton("📝 Отзывы", callback_data="reviews_list:0"),
+    ])
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -381,6 +399,105 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=build_main_menu(quests),
             parse_mode="Markdown"
         )
+        return
+
+    # — Список отзывов —
+    if data.startswith("reviews_list:"):
+        page = int(data.split(":")[1])
+        try:
+            reviews = api_get_reviews()
+        except Exception as e:
+            await query.edit_message_text(f"❌ Ошибка: {e}")
+            return
+        PAGE = 5
+        total = len(reviews)
+        chunk = reviews[page*PAGE:(page+1)*PAGE]
+        if not chunk:
+            await query.edit_message_text(
+                "📝 *Отзывы*\n\nОтзывов пока нет.",
+                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("◀️ К списку квестов", callback_data="back_to_list")]]),
+                parse_mode="Markdown"
+            )
+            return
+        text = f"📝 *Отзывы* (всего: {total})\n\n"
+        keyboard = []
+        for r in chunk:
+            stars = "★" * r["rating"] + "☆" * (5 - r["rating"])
+            name = r["name"][:15]
+            quest = r["quest"][:12]
+            txt = r["text"][:40].replace("\n", " ")
+            text += f"*{name}* · {stars}\n_{quest}_\n{txt}...\n\n"
+            keyboard.append([InlineKeyboardButton(
+                f"🗑 Удалить: {name} — {quest}",
+                callback_data=f"del_review:{r['id']}:{page}"
+            )])
+        nav = []
+        if page > 0:
+            nav.append(InlineKeyboardButton("◀️", callback_data=f"reviews_list:{page-1}"))
+        if (page+1)*PAGE < total:
+            nav.append(InlineKeyboardButton("▶️", callback_data=f"reviews_list:{page+1}"))
+        if nav:
+            keyboard.append(nav)
+        keyboard.append([InlineKeyboardButton("◀️ К списку квестов", callback_data="back_to_list")])
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        return
+
+    # — Удалить отзыв (подтверждение) —
+    if data.startswith("del_review:"):
+        parts = data.split(":")
+        review_id = parts[1]
+        page = parts[2] if len(parts) > 2 else "0"
+        keyboard = [
+            [InlineKeyboardButton("✅ Да, удалить", callback_data=f"confirm_del_review:{review_id}:{page}")],
+            [InlineKeyboardButton("❌ Отмена", callback_data=f"reviews_list:{page}")],
+        ]
+        await query.edit_message_text(
+            "⚠️ *Удалить этот отзыв?*",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+        return
+
+    # — Подтверждение удаления отзыва —
+    if data.startswith("confirm_del_review:"):
+        parts = data.split(":")
+        review_id = parts[1]
+        page = parts[2] if len(parts) > 2 else "0"
+        try:
+            api_delete_review(review_id)
+            await query.answer("✅ Отзыв удалён")
+        except Exception as e:
+            await query.answer(f"❌ Ошибка: {e}", show_alert=True)
+        # Возвращаемся к списку
+        query.data = f"reviews_list:{page}"
+        try:
+            reviews = api_get_reviews()
+        except:
+            reviews = []
+        PAGE = 5
+        page_i = int(page)
+        total = len(reviews)
+        chunk = reviews[page_i*PAGE:(page_i+1)*PAGE]
+        if not chunk and page_i > 0:
+            page_i = 0
+            chunk = reviews[:PAGE]
+        text = f"📝 *Отзывы* (всего: {total})\n\n"
+        keyboard = []
+        for r in chunk:
+            stars = "★" * r["rating"] + "☆" * (5 - r["rating"])
+            name = r["name"][:15]
+            quest = r["quest"][:12]
+            txt = r["text"][:40].replace("\n", " ")
+            text += f"*{name}* · {stars}\n_{quest}_\n{txt}...\n\n"
+            keyboard.append([InlineKeyboardButton(
+                f"🗑 Удалить: {name} — {quest}",
+                callback_data=f"del_review:{r['id']}:{page_i}"
+            )])
+        keyboard.append([InlineKeyboardButton("◀️ К списку квестов", callback_data="back_to_list")])
+        if not chunk:
+            text = "📝 *Отзывы*\n\nОтзывов нет."
+            keyboard = [[InlineKeyboardButton("◀️ К списку квестов", callback_data="back_to_list")]]
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
         return
 
     # — Начать создание нового квеста —

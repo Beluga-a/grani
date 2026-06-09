@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import pool, { initReviewsTable } from "@/lib/db";
 
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "change-me-to-random-string";
+function checkAdmin(req: Request) {
+  return req.headers.get("x-admin-secret") === ADMIN_SECRET;
+}
+
 export async function GET() {
   try {
     await initReviewsTable();
@@ -53,4 +58,17 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "Ошибка сохранения" }, { status: 500 });
   }
+}
+
+export async function DELETE(req: Request) {
+  if (!checkAdmin(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await req.json() as { id: string };
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  await initReviewsTable();
+  const { rowCount } = await pool.query("DELETE FROM reviews WHERE id = $1", [id]);
+  if (!rowCount) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json({ ok: true });
 }
