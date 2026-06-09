@@ -1,5 +1,6 @@
-import Footer from "@/components/Footer";
 import { readQuests } from "@/lib/quests";
+
+export const dynamic = "force-dynamic";
 
 export default async function CertificatesPage() {
   const quests = await readQuests();
@@ -10,7 +11,7 @@ export default async function CertificatesPage() {
         <div className="eyebrow">Подарки</div>
         <h1 className="h1">Подарочные купоны</h1>
         <p style={{ color: "var(--text-soft)", marginTop: 12, fontSize: 14, maxWidth: 480 }}>
-          Подари незабываемые впечатления — купон на любой квест ГРАНИ СТРАХА
+          На все квесты от 500₽ до 8000₽
         </p>
       </div>
 
@@ -30,8 +31,6 @@ export default async function CertificatesPage() {
           ))}
         </div>
       </section>
-
-      <Footer />
     </>
   );
 }

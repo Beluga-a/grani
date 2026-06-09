@@ -57,7 +57,7 @@ export default function Nav() {
       </ul>
 
       <div className="nav-right">
-        <span className="nav-phone">+7 (999) 000-00-00</span>
+        <a className="nav-phone" href="tel:+79145163188">+7 (914) 516-31-88</a>
         {session ? (
           <div className="nav-user">
             {session.user?.image && (

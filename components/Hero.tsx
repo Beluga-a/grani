@@ -6,7 +6,7 @@ export default function Hero() {
       <div className="hero-content">
         <div className="hero-warning">⚠ Только для смельчаков</div>
         <h1 className="hero-title">
-          Самые страшные!<em>Самые запоминающиеся</em>хоррор квесты!
+          Самые страшные!<em style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontStyle: "normal" }}>Самые запоминающиеся</em>хоррор квесты!
         </h1>
         <p className="hero-desc">
           Премиальные хоррор-квесты с живыми актёрами, кинематографическими
