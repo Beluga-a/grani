@@ -596,12 +596,67 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ Отменено. /start чтоб начать заново.")
 
 
+# ═══════════════════════ ЗАГРУЗКА ФОТО ═══════════════════════
+
+async def upload_photo_to_telegraph(file_bytes: bytes) -> str:
+    """Загружает фото на telegra.ph и возвращает URL."""
+    r = requests.post(
+        "https://telegra.ph/upload",
+        files={"file": ("photo.jpg", file_bytes, "image/jpeg")},
+        timeout=30,
+    )
+    result = r.json()
+    if isinstance(result, list) and result and "src" in result[0]:
+        return "https://telegra.ph" + result[0]["src"]
+    raise Exception(f"Ошибка загрузки: {result}")
+
+
+async def on_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработка входящего фото — только если редактируем поле photo."""
+    if not is_admin(update):
+        return
+
+    editing = context.user_data.get("editing")
+    if not editing or editing.get("field") != "photo":
+        await update.message.reply_text(
+            "📸 Фото получено, но сейчас не выбрано поле для фото.\n"
+            "Открой квест → нажми 📸 Фото (URL) → и затем пришли фото."
+        )
+        return
+
+    quest_id = editing["quest_id"]
+    msg = await update.message.reply_text("⏳ Загружаю фото...")
+
+    try:
+        # Берём самое большое качество
+        photo = update.message.photo[-1]
+        tg_file = await photo.get_file()
+        file_bytes = await tg_file.download_as_bytearray()
+
+        photo_url = await upload_photo_to_telegraph(bytes(file_bytes))
+        api_update_field(quest_id, "photo", photo_url)
+
+        context.user_data.pop("editing", None)
+        keyboard = [[
+            InlineKeyboardButton("◀️ К квесту", callback_data=f"quest:{quest_id}"),
+            InlineKeyboardButton("📋 К списку", callback_data="back_to_list"),
+        ]]
+        await msg.edit_text(
+            f"✅ *Фото загружено и сохранено!*\n\n[Посмотреть фото]({photo_url})",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+    except Exception as e:
+        await msg.edit_text(f"❌ Ошибка загрузки фото:\n{e}")
+
+
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("quests", cmd_start))
     app.add_handler(CommandHandler("cancel", cmd_cancel))
     app.add_handler(CallbackQueryHandler(on_button))
+    app.add_handler(MessageHandler(filters.PHOTO, on_photo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     print("Бот ГРАНИ СТРАХА запущен.")
     print(f"   Сайт: {SITE_URL}")
