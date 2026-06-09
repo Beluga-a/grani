@@ -19,7 +19,7 @@ export default async function QuestsPage() {
       </div>
 
       <div className="section">
-        <QuestsGrid quests={quests} showFilters />
+        <QuestsGrid quests={quests} />
       </div>
 
       <CtaBand
@@ -30,8 +30,8 @@ export default async function QuestsPage() {
         }
         sub="Звони — забронируем место"
         buttons={
-          <a className="btn btn-primary" href="tel:+79990000000">
-            +7 (999) 000-00-00
+          <a className="btn btn-primary" href="tel:+79145163188">
+            +7 (914) 516-31-88
           </a>
         }
       />
