@@ -417,9 +417,18 @@ a { color: inherit; text-decoration: none; }
 .adv-swiper::-webkit-scrollbar { display: none; }
 .adv-swiper-card {
   min-width: 82vw;
+  max-width: 82vw;
+  height: 260px;
   scroll-snap-align: center;
   border: 1px solid var(--border);
   flex-shrink: 0;
+  overflow: hidden;
+}
+.adv-swiper-card .adv-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .adv-item {
   background: var(--panel); padding: 36px 28px;
