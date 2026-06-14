@@ -34,10 +34,13 @@ if os.path.exists(ENV_PATH):
             value = value.strip().strip('"').strip("'")
             os.environ.setdefault(key, value)
 
-TOKEN         = os.getenv("BOT_TOKEN", "").strip()
-ADMIN_ID_RAW  = os.getenv("ADMIN_ID", "").strip()
-SITE_URL      = os.getenv("SITE_URL", "http://localhost:3000").strip()
-ADMIN_SECRET  = os.getenv("ADMIN_SECRET", "change-me-to-random-string").strip()
+TOKEN          = os.getenv("BOT_TOKEN", "").strip()
+ADMIN_ID_RAW   = os.getenv("ADMIN_ID", "").strip()
+SITE_URL       = os.getenv("SITE_URL", "http://localhost:3000").strip()
+ADMIN_SECRET   = os.getenv("ADMIN_SECRET", "change-me-to-random-string").strip()
+SUPABASE_URL   = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_KEY   = os.getenv("SUPABASE_KEY", "").strip()
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "media").strip()
 
 if not TOKEN:
     raise SystemExit("Не задан BOT_TOKEN. Укажи его в переменных окружения.")
@@ -597,53 +600,39 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❌ Отменено. /start чтоб начать заново.")
 
 
-# ═══════════════════════ ЗАГРУЗКА ФОТО ═══════════════════════
+# ═══════════════════════ ЗАГРУЗКА МЕДИА ═══════════════════════
 
-async def upload_photo_to_telegraph(file_bytes: bytes) -> str:
-    """Загружает фото — пробует catbox.moe, затем telegra.ph."""
-    # Попытка 1: catbox.moe
-    try:
-        r = requests.post(
-            "https://catbox.moe/user/api.php",
-            data={"reqtype": "fileupload"},
-            files={"fileToUpload": ("photo.jpg", file_bytes, "image/jpeg")},
-            timeout=30,
-        )
-        url = r.text.strip()
-        if url.startswith("https://"):
-            return url
-    except Exception:
-        pass
-
-    # Попытка 2: telegra.ph
-    try:
-        r = requests.post(
-            "https://telegra.ph/upload",
-            files={"upload": ("photo.jpg", file_bytes, "image/jpeg")},
-            timeout=30,
-        )
-        result = r.json()
-        if isinstance(result, list) and result and "src" in result[0]:
-            return "https://telegra.ph" + result[0]["src"]
-    except Exception:
-        pass
-
-    # Попытка 3: 0x0.st
-    r = requests.post(
-        "https://0x0.st",
-        files={"file": ("photo.jpg", file_bytes, "image/jpeg")},
-        timeout=30,
+def _upload_to_supabase(file_bytes: bytes, filename: str, mime: str) -> str:
+    """Загружает файл в Supabase Storage и возвращает публичный URL."""
+    from supabase import create_client
+    import time
+    sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+    # Уникальное имя, чтобы не было конфликтов
+    unique = f"quests/{int(time.time())}_{filename}"
+    sb.storage.from_(SUPABASE_BUCKET).upload(
+        unique,
+        file_bytes,
+        {"content-type": mime, "upsert": "false"},
     )
-    url = r.text.strip()
-    if url.startswith("https://") or url.startswith("http://"):
-        return url
-
-    raise Exception("Все сервисы недоступны. Попробуй ещё раз.")
+    return sb.storage.from_(SUPABASE_BUCKET).get_public_url(unique)
 
 
 async def upload_file(file_bytes: bytes, filename: str, mime: str) -> str:
-    """Загружает файл на catbox.moe и возвращает URL."""
-    # Попытка 1: catbox.moe
+    """Загружает файл и возвращает публичный URL.
+
+    Порядок попыток:
+    1. Supabase Storage (если настроен) — доступен в России без VPN
+    2. catbox.moe — резервный, может быть заблокирован
+    3. 0x0.st   — резервный, может быть заблокирован
+    """
+    # 1. Supabase Storage
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            return _upload_to_supabase(file_bytes, filename, mime)
+        except Exception as e:
+            print(f"[Supabase] ошибка: {e}")
+
+    # 2. catbox.moe
     try:
         r = requests.post(
             "https://catbox.moe/user/api.php",
@@ -657,21 +646,7 @@ async def upload_file(file_bytes: bytes, filename: str, mime: str) -> str:
     except Exception:
         pass
 
-    # Попытка 2: telegra.ph (только для фото)
-    if mime.startswith("image/"):
-        try:
-            r = requests.post(
-                "https://telegra.ph/upload",
-                files={"upload": (filename, file_bytes, mime)},
-                timeout=30,
-            )
-            result = r.json()
-            if isinstance(result, list) and result and "src" in result[0]:
-                return "https://telegra.ph" + result[0]["src"]
-        except Exception:
-            pass
-
-    # Попытка 3: 0x0.st
+    # 3. 0x0.st
     try:
         r = requests.post(
             "https://0x0.st",
@@ -684,10 +659,12 @@ async def upload_file(file_bytes: bytes, filename: str, mime: str) -> str:
     except Exception:
         pass
 
-    raise Exception("Все сервисы недоступны. Попробуй ещё раз или пришли ссылку.")
+    raise Exception(
+        "Все сервисы недоступны. Настрой Supabase Storage (см. README) "
+        "или пришли прямую ссылку на фото/видео."
+    )
 
 
-# Оставляем для обратной совместимости
 async def upload_photo_to_telegraph(file_bytes: bytes) -> str:
     return await upload_file(file_bytes, "photo.jpg", "image/jpeg")
 

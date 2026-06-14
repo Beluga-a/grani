@@ -28,6 +28,12 @@ BOT_TOKEN=твой_токен_от_botfather
 ADMIN_ID=твой_telegram_id
 SITE_URL=http://localhost:3000
 ADMIN_SECRET=любая_рандомная_длинная_строка
+
+# Supabase Storage — чтобы фото/видео грузились без VPN
+# Получи на supabase.com → Settings → API
+SUPABASE_URL=https://XXXXXXXXXX.supabase.co
+SUPABASE_KEY=eyJ...твой_anon_ключ...
+SUPABASE_BUCKET=media
 ```
 
 ⚠️ **`ADMIN_SECRET` должен быть таким же, как в `.env.local` сайта!**
