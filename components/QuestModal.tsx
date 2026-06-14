@@ -213,9 +213,15 @@ export default function QuestModal({ quest, onClose }: Props) {
 
             <div className="aside-block">
               <div className="aside-block-label">Контакты</div>
-              <div className="aside-schedule">
-                📍 Ул. Недорезова 7В (цокольный этаж)<br />
-                📞 +7 (914) 516-31-88
+              <div className="aside-schedule aside-contacts">
+                <span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 21c-4.418-4.418-7-7.582-7-10a7 7 0 1 1 14 0c0 2.418-2.582 5.582-7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>
+                  Ул. Недорезова 7В (цокольный этаж)
+                </span>
+                <a href="tel:+79145163188">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.24h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.01z"/></svg>
+                  +7 (914) 516-31-88
+                </a>
               </div>
             </div>
           </aside>

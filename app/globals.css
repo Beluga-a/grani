@@ -1046,6 +1046,7 @@ body.modal-open { overflow: hidden; }
   perspective: 1000px;
   height: 180px;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .cert-flip-inner {
@@ -1122,10 +1123,13 @@ body.modal-open { overflow: hidden; }
 }
 
 @media (max-width: 600px) {
-  .cert-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
-  .cert-flip { height: 150px; }
-  .cert-amount { font-size: 26px; }
-  .cert-back-phone { font-size: 16px; }
+  .cert-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cert-flip { height: 210px; }
+  .cert-face { padding: 16px; }
+  .cert-amount { font-size: 24px; }
+  .cert-back-phone { font-size: 15px; }
+  .cert-back-label { font-size: 11px; }
+  .cert-back-addr { font-size: 8px; }
 }
 
 /* ─── COUPONS ─── */
@@ -1191,4 +1195,35 @@ body.modal-open { overflow: hidden; }
   .coupon-right { width: 90px; }
   .coupon-name { font-size: 20px; }
   .coupon-price { font-size: 22px; }
+}
+
+/* ─── CONTACT SVG ICONS ─── */
+.footer-contacts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.footer-contacts li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--red);
+}
+.aside-contacts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.aside-contacts span,
+.aside-contacts a {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: inherit;
+  text-decoration: none;
+}
+.aside-contacts a:hover { color: var(--red); }
+.aside-contacts svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--red);
 }
