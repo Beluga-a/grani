@@ -603,18 +603,22 @@ async def cmd_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ═══════════════════════ ЗАГРУЗКА МЕДИА ═══════════════════════
 
 def _upload_to_supabase(file_bytes: bytes, filename: str, mime: str) -> str:
-    """Загружает файл в Supabase Storage и возвращает публичный URL."""
+    """Загружает файл в Supabase Storage, возвращает прокси-URL через сайт.
+
+    Прямой Supabase URL заблокирован в России, поэтому возвращаем адрес
+    через Next.js прокси (/api/media/...) — он на том же домене, что и сайт.
+    """
     from supabase import create_client
     import time
     sb = create_client(SUPABASE_URL, SUPABASE_KEY)
-    # Уникальное имя, чтобы не было конфликтов
     unique = f"quests/{int(time.time())}_{filename}"
     sb.storage.from_(SUPABASE_BUCKET).upload(
         unique,
         file_bytes,
         {"content-type": mime, "upsert": "false"},
     )
-    return sb.storage.from_(SUPABASE_BUCKET).get_public_url(unique)
+    # Возвращаем прокси-URL через сайт, а не прямую ссылку на Supabase
+    return f"{SITE_URL}/api/media/{unique}"
 
 
 async def upload_file(file_bytes: bytes, filename: str, mime: str) -> str:
