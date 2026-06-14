@@ -9,7 +9,7 @@ const LINKS = [
   { href: "/", label: "Главная" },
   { href: "/quests", label: "Квесты" },
   { href: "/rules", label: "Правила" },
-  { href: "/faq", label: "Часто задаваемые вопросы" },
+  { href: "/faq", label: "FAQ", fullLabel: "Часто задаваемые вопросы" },
   { href: "/feartest", label: "Тест на страх" },
   { href: "/certificates", label: "Сертификаты" },
 ];
@@ -49,8 +49,12 @@ export default function Nav() {
             <Link
               href={link.href}
               className={pathname === link.href ? "active" : ""}
+              title={link.fullLabel}
             >
-              {link.label}
+              <span className="nav-label-short">{link.label}</span>
+              {link.fullLabel && (
+                <span className="nav-label-full">{link.fullLabel}</span>
+              )}
             </Link>
           </li>
         ))}
