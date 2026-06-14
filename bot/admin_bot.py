@@ -66,7 +66,6 @@ FIELDS = {
     "rating":     {"label": "⭐ Рейтинг",          "type": "text", "hint": "Например: 4.9"},
     "reviews":    {"label": "💬 Кол-во отзывов",   "type": "int"},
     "badge":      {"label": "🏷 Бейдж",            "type": "text", "hint": "Например: Хит, Новинка, Премиум"},
-    "cat":        {"label": "📂 Категория",        "type": "choice", "choices": ["extreme", "mystery", "classic"]},
     "icon":       {"label": "🔣 Символ",           "type": "text", "hint": "Один символ, напр.: ☩ ✦ ⚛"},
     "schedule":   {"label": "📅 Расписание",       "type": "text"},
     "photo":      {"label": "📸 Фото (URL)",       "type": "text", "hint": "Прямая ссылка на фото, напр.: https://i.imgur.com/abc.jpg"},
@@ -195,7 +194,7 @@ async def show_quest_card(query, quest_id):
     text += f"👤 *Игроков:* {q['players']}  ⏱ {q['time']}  🔞 {q['age']}\n"
     text += f"😱 *Страх:* {q['fear']}/5  🧠 *Сложность:* {q['diff']}/5\n"
     text += f"⭐ *Рейтинг:* {q['rating']} ({q['reviews']} отзывов)\n"
-    text += f"🏷 *Бейдж:* {q['badge']}  📂 {q['cat']}\n\n"
+    text += f"🏷 *Бейдж:* {q['badge']}\n\n"
     desc = q['desc']
     text += f"📝 _{desc[:120]}{'...' if len(desc)>120 else ''}_\n\n"
     text += "👇 *Жми на поле чтобы изменить:*"
@@ -233,22 +232,11 @@ async def ask_new_quest_step(query_or_msg, context, edit=False):
     step = state.get("step", 0)
 
     if step >= len(NEW_QUEST_STEPS):
-        # Показываем категорию
-        keyboard = [
-            [InlineKeyboardButton("👹 Экстрим (extreme)", callback_data="nq_cat:extreme")],
-            [InlineKeyboardButton("🔍 Детектив (mystery)", callback_data="nq_cat:mystery")],
-            [InlineKeyboardButton("🏰 Классика (classic)", callback_data="nq_cat:classic")],
-            [InlineKeyboardButton("❌ Отмена", callback_data="back_to_list")],
-        ]
-        text = "📂 *Выбери категорию квеста:*"
-        if edit:
-            await query_or_msg.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
-        else:
-            await query_or_msg.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await finish_new_quest(query_or_msg, context)
         return
 
     field, prompt, ftype, hint = NEW_QUEST_STEPS[step]
-    total = len(NEW_QUEST_STEPS) + 1  # +1 для категории
+    total = len(NEW_QUEST_STEPS)
     text = f"*Новый квест — шаг {step+1}/{total}*\n\n{prompt}"
     if hint:
         text += f"\n\n💡 _{hint}_"
@@ -261,10 +249,9 @@ async def ask_new_quest_step(query_or_msg, context, edit=False):
         await query_or_msg.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
 
-async def finish_new_quest(query, context, cat: str):
+async def finish_new_quest(query_or_msg, context):
     state = context.user_data.get("new_quest", {})
     data = state.get("data", {})
-    data["cat"] = cat
 
     # Дефолтные значения
     quest_data = {
@@ -298,9 +285,11 @@ async def finish_new_quest(query, context, cat: str):
         text = f"❌ Ошибка при создании квеста:\n{e}"
 
     context.user_data.clear()
-    quests = api_get_quests()
     keyboard = [[InlineKeyboardButton("📋 К списку квестов", callback_data="back_to_list")]]
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    if hasattr(query_or_msg, "edit_message_text"):
+        await query_or_msg.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+    else:
+        await query_or_msg.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
 
 # ═══════════════════════ ХЕНДЛЕР КНОПОК ═══════════════════════
@@ -509,12 +498,6 @@ async def on_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await start_new_quest(query, context)
         return
 
-    # — Выбор категории при создании —
-    if data.startswith("nq_cat:"):
-        cat = data.split(":")[1]
-        await finish_new_quest(query, context, cat)
-        return
-
 
 # ═══════════════════════ ХЕНДЛЕР ТЕКСТА ═══════════════════════
 
@@ -530,8 +513,7 @@ async def on_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         step = state["step"]
 
         if step >= len(NEW_QUEST_STEPS):
-            # Ждём выбор категории кнопкой
-            await update.message.reply_text("Выбери категорию кнопкой выше.")
+            await ask_new_quest_step(update.message, context, edit=False)
             return
 
         field, _, ftype, _ = NEW_QUEST_STEPS[step]

@@ -1,5 +1,5 @@
 import type { Quest } from "@/lib/types";
-import { formatPrice, categoryLabel } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 
 interface Props {
   quest: Quest;
@@ -15,7 +15,6 @@ export default function QuestCard({ quest, onClick }: Props) {
         ) : (
           <div className="qcard-img-inner">{quest.icon}</div>
         )}
-        <div className="qcard-cat-badge">{categoryLabel(quest.cat)}</div>
       </div>
       <div className="qcard-body">
         <div className="qcard-top">

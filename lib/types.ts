@@ -1,5 +1,3 @@
-export type QuestCategory = "extreme" | "mystery" | "classic";
-
 export interface Quest {
   id: number;
   name: string;
@@ -14,7 +12,6 @@ export interface Quest {
   basePrice: number;
   baseUpTo: number;
   extraPrice: number;
-  cat: QuestCategory;
   icon: string;
   photo?: string;
   video?: string;

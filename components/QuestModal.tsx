@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import type { Quest } from "@/lib/types";
-import { categoryLabel } from "@/lib/format";
 
 /** Конвертирует любую ссылку на видео в embed URL */
 function getEmbedUrl(url: string): string {
